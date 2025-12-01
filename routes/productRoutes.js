@@ -50,4 +50,34 @@ router.get("/product/:id/category", productController.getProductCategory);
 // Product description route (kept same path)
 router.get("/api/products/:id/description", productController.getProductDescription);
 
+////suraj kumar singh//
+
+// Categories
+router.post("/add-category", productController.addCategory);
+
+// Product Colors
+router.post("/product/:id/add-color", productController.addProductColor);
+
+// Product Descriptions (Multi-language)
+router.post("/product/:id/add-description", productController.addProductDescription);
+
+// Product Images
+router.post("/product/:id/add-image", upload.single("image"), productController.addProductImage);
+
+// Product Offers
+router.post("/product/:id/add-offer", productController.addProductOffer);
+
+// Product Ratings
+router.post("/product/:id/add-rating", productController.addProductRating);
+
+// Product Reviews
+router.post("/product/:id/add-review", productController.addProductReview);
+
+// Product Sizes
+router.post("/product/:id/add-size", productController.addProductSize);
+
+// Recent searches
+router.post("/add-recent-search", productController.addRecentSearch);
+
+
 module.exports = router;

@@ -179,3 +179,157 @@ exports.getProductDescription = async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 };
+
+/// suraj kumar singh////
+exports.addCategory = async (req, res) => {
+  try {
+    const { title } = req.body;
+
+    await db.query(
+      "INSERT INTO categories (title) VALUES (?)",
+      [title]
+    );
+
+    res.json({ message: "Category added successfully" });
+  } catch (err) {
+    res.status(400).json({ message: "Add category error", err });
+  }
+};
+
+exports.addProductColor = async (req, res) => {
+  try {
+    const { color_name, color_code } = req.body;
+    const product_id = req.params.id;
+
+    await db.query(
+      "INSERT INTO product_colors (product_id, color_name, color_code) VALUES (?, ?, ?)",
+      [product_id, color_name, color_code]
+    );
+
+    res.json({ message: "Color added successfully" });
+  } catch (err) {
+    res.status(400).json({ message: "Add color error", err });
+  }
+};
+
+exports.addProductDescription = async (req, res) => {
+  try {
+    const { language_code, description } = req.body;
+    const product_id = req.params.id;
+
+    await db.query(
+      "INSERT INTO product_descriptions (product_id, language_code, description) VALUES (?, ?, ?)",
+      [product_id, language_code, description]
+    );
+
+    res.json({ message: "Description added successfully" });
+  } catch (err) {
+    res.status(400).json({ message: "Add description error", err });
+  }
+};
+
+
+exports.addProductImage = async (req, res) => {
+  try {
+    if (!req.file)
+      return res.status(400).json({ message: "Image is required" });
+
+    const image_url = req.file.filename;
+    const product_id = req.params.id;
+
+    await db.query(
+      "INSERT INTO product_images (product_id, image_url) VALUES (?, ?)",
+      [product_id, image_url]
+    );
+
+    res.json({ message: "Image added successfully" });
+  } catch (err) {
+    res.status(400).json({ message: "Add image error", err });
+  }
+};
+
+
+exports.addProductOffer = async (req, res) => {
+  try {
+    const { offer_text } = req.body;
+    const product_id = req.params.id;
+
+    await db.query(
+      "INSERT INTO product_offers (product_id, offer_text) VALUES (?, ?)",
+      [product_id, offer_text]
+    );
+
+    res.json({ message: "Offer added successfully" });
+  } catch (err) {
+    res.status(400).json({ message: "Add offer error", err });
+  }
+};
+
+
+exports.addProductRating = async (req, res) => {
+  try {
+    const { rating_value, rating_count } = req.body;
+    const product_id = req.params.id;
+
+    await db.query(
+      "INSERT INTO product_ratings (product_id, rating_value, rating_count) VALUES (?, ?, ?)",
+      [product_id, rating_value, rating_count]
+    );
+
+    res.json({ message: "Rating added successfully" });
+  } catch (err) {
+    res.status(400).json({ message: "Add rating error", err });
+  }
+};
+
+
+exports.addProductReview = async (req, res) => {
+  try {
+    const { user_name, rating, review_text } = req.body;
+    const product_id = req.params.id;
+
+    await db.query(
+      "INSERT INTO product_reviews (product_id, user_name, rating, review_text) VALUES (?, ?, ?, ?)",
+      [product_id, user_name, rating, review_text]
+    );
+
+    res.json({ message: "Review added successfully" });
+  } catch (err) {
+    res.status(400).json({ message: "Add review error", err });
+  }
+};
+
+
+exports.addProductSize = async (req, res) => {
+  try {
+    const { size } = req.body;
+    const product_id = req.params.id;
+
+    await db.query(
+      "INSERT INTO product_sizes (product_id, size) VALUES (?, ?)",
+      [product_id, size]
+    );
+
+    res.json({ message: "Size added successfully" });
+  } catch (err) {
+    res.status(400).json({ message: "Add size error", err });
+  }
+};
+
+
+exports.addRecentSearch = async (req, res) => {
+  try {
+    const { user_id, keyword } = req.body;
+
+    await db.query(
+      "INSERT INTO recent_searches (user_id, keyword) VALUES (?, ?)",
+      [user_id, keyword]
+    );
+
+    res.json({ message: "Search added successfully" });
+  } catch (err) {
+    res.status(400).json({ message: "Add recent search error", err });
+  }
+};
+
+
