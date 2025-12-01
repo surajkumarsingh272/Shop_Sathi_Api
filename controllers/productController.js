@@ -1,6 +1,7 @@
 const db = require("../config/db");
 
-// Upload image handler (uses multer; multer already saved file)
+const path = require("path");
+
 exports.uploadImage = (req, res) => {
   if (!req.file) return res.status(400).json({ success: false, message: "No file uploaded" });
   res.json({ success: true, filename: req.file.filename });
@@ -37,18 +38,40 @@ exports.productScreen = async (req, res) => {
 };
 
 exports.addProduct = async (req, res) => {
-  const { name, image, old_price, new_price, rating, discount, category_id } = req.body;
+  
+  const { name, old_price, new_price, rating, discount, category_id } = req.body;
 
   try {
+     if (!req.file) {
+      return res.status(400).json({ message: "Image is required" });
+    }
+     const imagePath = req.file.filename; 
     const sql =
       "INSERT INTO products (name, image, old_price, new_price, rating, discount, category_id) VALUES (?, ?, ?, ?, ?, ?, ?)";
-    await db.query(sql, [name, image, old_price, new_price, rating, discount, category_id]);
+    await db.query(sql, [name, imagePath, old_price, new_price, rating, discount, category_id]);
 
     res.status(200).json({ message: "Product added successfully" });
   } catch (err) {
+    
     res.status(400).json({ message: "Product insert error", err });
   }
 };
+
+
+exports.deleteProduct = async (req, res) => {
+  try {
+    const productId = req.params.id;
+    console.log("Deleting product ID:", req.params.id);
+
+     await db.query("DELETE FROM `products` WHERE id=?", [productId]);
+
+    res.status(200).json({ message: "Product deleted successfully" });
+
+  } catch (err) {
+    res.status(500).json({ message: "Delete product error", err });
+  }
+};
+
 
 exports.getProductById = async (req, res) => {
   try {

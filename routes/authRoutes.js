@@ -3,7 +3,7 @@ const router = express.Router();
 
 const authController = require("../controllers/authController");
 const otpLimiter = require("../middleware/otpRateLimit");
-const { verifyTokenMiddleware } = require("../middleware/authMiddleware");
+
 
 // Register (with otpLimiter)
 router.post("/register", otpLimiter, authController.register);

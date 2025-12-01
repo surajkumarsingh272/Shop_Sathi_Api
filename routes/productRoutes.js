@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-
+router.use(express.json());
 const productController = require("../controllers/productController");
 const upload = require("../utils/upload_images");
 
@@ -17,9 +17,10 @@ router.get("/product-screen", productController.productScreen);
 router.post("/upload", upload.single("image"), productController.uploadImage);
 
 // Add product
-router.post("/add-product", productController.addProduct);
+// router.post("/add-product", productController.addProduct);
+router.post("/add-product", upload.single("image"), productController.addProduct);
+router.delete("/delete-product/:id", productController.deleteProduct);
 
-// Product by id
 router.get("/product/:id", productController.getProductById);
 
 // Product colors
