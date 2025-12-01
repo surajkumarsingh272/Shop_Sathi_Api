@@ -4,14 +4,10 @@ const router = express.Router();
 const authController = require("../controllers/authController");
 const otpLimiter = require("../middleware/otpRateLimit");
 
-
-// Register (with otpLimiter)
 router.post("/register", otpLimiter, authController.register);
-
-// Verify OTP
++
 router.post("/verify-otp", authController.verifyOtp);
 
-// Login
 router.post("/login", authController.login);
 
 // Forgot Password (otpLimiter)
