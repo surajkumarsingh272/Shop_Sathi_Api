@@ -12,7 +12,7 @@ exports.register = async (req, res) => {
   }
 
   try {
-    const [rows] = await db.query("SELECT * FROM users WHERE email=? OR phone=?", [email, phone]);
+    const [rows] = await db.query("SELECT * FROM users WHERE email=?", [email]);
 
     if (rows.length > 0) {
       return res.json({ success: false, message: "User already exists" });
