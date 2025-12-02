@@ -38,6 +38,7 @@ exports.register = async (req, res) => {
   }
 };
 
+
 exports.verifyOtp = async (req, res) => {
   const { phone, otp } = req.body;
 

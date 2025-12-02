@@ -1,4 +1,4 @@
 require("dotenv").config();
 module.exports = {
-  SECRET_KEY: process.env.SECRET_KEY || "change_this_secret",
+  SECRET_KEY: process.env.SECRET_KEY,
 };

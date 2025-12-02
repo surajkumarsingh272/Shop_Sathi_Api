@@ -1,5 +1,4 @@
 const db = require("../config/db");
-
 const path = require("path");
 
 exports.uploadImage = (req, res) => {
@@ -179,6 +178,127 @@ exports.getProductDescription = async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 };
+
+exports.productStatusList = async (req, res) => {
+  try {
+    const sql = `
+      SELECT 
+        p.id,
+        p.name,
+        p.image AS image_url,
+        p.old_price AS price,
+        p.new_price AS sale_price,
+        ROUND(((p.old_price - p.new_price) / p.old_price) * 100) AS discount_percent,
+        p.rating
+      FROM products p
+      ORDER BY p.id DESC;
+    `;
+
+    const [result] = await db.query(sql);
+
+    res.status(200).json({
+      success: true,
+      products: result
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Product status fetch error" });
+  }
+};
+
+exports.purchaseHistory = async (req, res) => {
+  try {
+    const userId = req.params.user_id;
+
+    const sql = `
+      SELECT 
+        oi.id,
+        p.name AS product,
+        p.image AS img,
+        oi.price,
+        p.rating,
+        DATE_FORMAT(o.order_date, "%b %d") AS date
+      FROM order_items oi
+      JOIN products p ON p.id = oi.product_id
+      JOIN orders o ON o.id = oi.order_id
+      WHERE o.user_id = ?
+      ORDER BY o.order_date DESC;
+    `;
+
+    const [result] = await db.query(sql, [userId]);
+
+    res.status(200).json({
+      success: true,
+      history: result,
+    });
+
+  } catch (err) {
+    console.error("History API Error:", err);
+    res.status(500).json({ message: "Purchase history fetch error" });
+  }
+};
+
+// Add to wishlist
+exports.addToWishlist = async (req, res) => {
+  try {
+    const { user_id, product_id } = req.body;
+    const sql = "INSERT INTO wishlist (user_id, product_id) VALUES (?, ?)";
+    await db.query(sql, [user_id, product_id]);
+    res.status(200).json({ success: true, message: "Added to wishlist" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Wishlist insert error" });
+  }
+};
+
+exports.getWishlist = async (req, res) => {
+    try {
+        const userId = req.params.user_id;
+
+        const sql = `
+            SELECT w.id AS wishlist_id,
+                   p.id AS product_id,
+                   p.name,
+                   p.image,
+                   p.new_price,
+                   p.old_price,
+                   p.rating,
+                   (SELECT COUNT(*) FROM product_reviews pr WHERE pr.product_id = p.id) AS reviews_count
+            FROM wishlist w
+            JOIN products p ON p.id = w.product_id
+            WHERE w.user_id = ?
+            ORDER BY w.created_at DESC
+        `;
+
+        const [result] = await db.query(sql, [userId]);
+
+        res.status(200).json({
+            success: true,
+            wishlist: result
+        });
+
+    } catch (err) {
+        console.error("Wishlist API Error:", err);
+        res.status(500).json({ message: "Wishlist fetch error" });
+    }
+};
+
+// Remove from wishlist
+exports.removeFromWishlist = async (req, res) => {
+  try {
+    const { user_id, product_id } = req.body;
+    const sql = "DELETE FROM wishlist WHERE user_id = ? AND product_id = ?";
+    await db.query(sql, [user_id, product_id]);
+    res.status(200).json({ success: true, message: "Removed from wishlist" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Wishlist delete error" });
+  }
+};
+
+
+
 
 /// suraj kumar singh////
 exports.addCategory = async (req, res) => {
