@@ -92,8 +92,8 @@ exports.login = async (req, res) => {
 
     const user = rows[0];
 
-    if (user.is_verified === 0)
-      return res.json({ success: false, message: "Please verify OTP first" });
+    // if (user.is_verified === 0)
+    //   return res.json({ success: false, message: "Please verify OTP first" });
 
     const valid = bcrypt.compareSync(password, user.password);
     if (!valid)
