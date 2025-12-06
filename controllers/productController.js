@@ -182,17 +182,18 @@ exports.getProductDescription = async (req, res) => {
 exports.productStatusList = async (req, res) => {
   try {
     const sql = `
-      SELECT 
-        p.id,
-        p.name,
-        p.image AS image_url,
-        p.old_price AS price,
-        p.new_price AS sale_price,
-        ROUND(((p.old_price - p.new_price) / p.old_price) * 100) AS discount_percent,
-        p.rating
-      FROM products p
-      ORDER BY p.id DESC;
-    `;
+  SELECT 
+    p.id,
+    p.name,
+    p.image AS image_url,
+    p.old_price AS price,
+    p.new_price AS sale_price,
+    p.discount,
+    p.rating
+  FROM products p
+  ORDER BY p.id DESC;
+`;
+
 
     const [result] = await db.query(sql);
 
@@ -210,7 +211,6 @@ exports.productStatusList = async (req, res) => {
 exports.purchaseHistory = async (req, res) => {
   try {
     const userId = req.params.user_id;
-
     const sql = `
       SELECT 
         oi.id,
@@ -240,62 +240,63 @@ exports.purchaseHistory = async (req, res) => {
 };
 
 // Add to wishlist
-exports.addToWishlist = async (req, res) => {
-  try {
-    const { user_id, product_id } = req.body;
-    const sql = "INSERT INTO wishlist (user_id, product_id) VALUES (?, ?)";
-    await db.query(sql, [user_id, product_id]);
-    res.status(200).json({ success: true, message: "Added to wishlist" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Wishlist insert error" });
-  }
-};
 
-exports.getWishlist = async (req, res) => {
-    try {
-        const userId = req.params.user_id;
+// exports.addToWishlist = async (req, res) => {
+//   try {
+//     const { user_id, product_id } = req.body;
+//     const sql = "INSERT INTO wishlist (user_id, product_id) VALUES (?, ?)";
+//     await db.query(sql, [user_id, product_id]);
+//     res.status(200).json({ success: true, message: "Added to wishlist" });
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ message: "Wishlist insert error" });
+//   }
+// };
 
-        const sql = `
-            SELECT w.id AS wishlist_id,
-                   p.id AS product_id,
-                   p.name,
-                   p.image,
-                   p.new_price,
-                   p.old_price,
-                   p.rating,
-                   (SELECT COUNT(*) FROM product_reviews pr WHERE pr.product_id = p.id) AS reviews_count
-            FROM wishlist w
-            JOIN products p ON p.id = w.product_id
-            WHERE w.user_id = ?
-            ORDER BY w.created_at DESC
-        `;
+// exports.getWishlist = async (req, res) => {
+//     try {
+//         const userId = req.params.user_id;
 
-        const [result] = await db.query(sql, [userId]);
+//         const sql = `
+//             SELECT w.id AS wishlist_id,
+//                    p.id AS product_id,
+//                    p.name,
+//                    p.image,
+//                    p.new_price,
+//                    p.old_price,
+//                    p.rating,
+//                    (SELECT COUNT(*) FROM product_reviews pr WHERE pr.product_id = p.id) AS reviews_count
+//             FROM wishlist w
+//             JOIN products p ON p.id = w.product_id
+//             WHERE w.user_id = ?
+//             ORDER BY w.created_at DESC
+//         `;
 
-        res.status(200).json({
-            success: true,
-            wishlist: result
-        });
+//         const [result] = await db.query(sql, [userId]);
 
-    } catch (err) {
-        console.error("Wishlist API Error:", err);
-        res.status(500).json({ message: "Wishlist fetch error" });
-    }
-};
+//         res.status(200).json({
+//             success: true,
+//             wishlist: result
+//         });
 
-// Remove from wishlist
-exports.removeFromWishlist = async (req, res) => {
-  try {
-    const { user_id, product_id } = req.body;
-    const sql = "DELETE FROM wishlist WHERE user_id = ? AND product_id = ?";
-    await db.query(sql, [user_id, product_id]);
-    res.status(200).json({ success: true, message: "Removed from wishlist" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Wishlist delete error" });
-  }
-};
+//     } catch (err) {
+//         console.error("Wishlist API Error:", err);
+//         res.status(500).json({ message: "Wishlist fetch error" });
+//     }
+// };
+
+// // Remove from wishlist
+// exports.removeFromWishlist = async (req, res) => {
+//   try {
+//     const { user_id, product_id } = req.body;
+//     const sql = "DELETE FROM wishlist WHERE user_id = ? AND product_id = ?";
+//     await db.query(sql, [user_id, product_id]);
+//     res.status(200).json({ success: true, message: "Removed from wishlist" });
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ message: "Wishlist delete error" });
+//   }
+// };
 
 
 

@@ -13,10 +13,11 @@ function verifyTokenMiddleware(req, res, next) {
   try {
     const decoded = jwt.verify(token, SECRET_KEY);
     req.user = decoded;
+    console.log("Decoded User:", decoded); 
     next();
   } catch (err) {
     return res.status(401).json({ success: false, message: "Invalid or expired token" });
   }
 }
-
 module.exports = { verifyTokenMiddleware };
+

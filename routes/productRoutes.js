@@ -40,9 +40,9 @@ router.get("/api/products/:id/description", productController.getProductDescript
 router.get("/product-status", productController.productStatusList);
 router.get("/history/:user_id", productController.purchaseHistory);
 
-router.post("/wishlist/add", productController.addToWishlist);
-router.get("/wishlist/:user_id", productController.getWishlist);
-router.delete("/wishlist/remove", productController.removeFromWishlist);
+// router.post("/wishlist/add", productController.addToWishlist);
+// router.get("/wishlist/:user_id", productController.getWishlist);
+// router.delete("/wishlist/remove", productController.removeFromWishlist);
 
 
 
