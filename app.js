@@ -26,14 +26,12 @@ const addressRoutes = require("./routes/addressRoutes");
 const couponRoutes = require("./routes/couponRoutes");
 const supportRoutes = require("./routes/supportRoutes");
 
-
 app.use("/api/profile", profileRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/wishlist", wishlistRoutes);
 app.use("/api/address", addressRoutes);
 app.use("/api/coupons", couponRoutes);
 app.use("/api/support", supportRoutes);
-
 
 app.get("/", (req, res) => res.json({ success: true, message: "API Running" }));
 

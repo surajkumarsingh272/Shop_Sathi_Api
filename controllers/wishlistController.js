@@ -20,11 +20,27 @@ const db = require("../config/db");
 // };
 
 // POST /wishlist
+// exports.addToWishlist = async (req, res) => {
+//   try {
+//     const { user_id, product_id } = req.body; // make sure body has correct fields
+//     const sql = "INSERT INTO wishlist (user_id, product_id) VALUES (?, ?)";
+//     await db.query(sql, [user_id, product_id]);
+//     res.status(200).json({ success: true, message: "Added to wishlist" });
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ message: "Wishlist insert error" });
+//   }
+// };
+
 exports.addToWishlist = async (req, res) => {
   try {
-    const { user_id, product_id } = req.body; // make sure body has correct fields
+    const user_id = req.user.id;  // <-- JWT se aayega, body se nahi
+    const { product_id } = req.body;
+
     const sql = "INSERT INTO wishlist (user_id, product_id) VALUES (?, ?)";
+
     await db.query(sql, [user_id, product_id]);
+
     res.status(200).json({ success: true, message: "Added to wishlist" });
   } catch (err) {
     console.error(err);
