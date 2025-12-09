@@ -235,8 +235,45 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { SECRET_KEY } = require("../config/jwt");
 
+// exports.register = async (req, res) => {
+//   const { name, email, phone, password } = req.body;
+
+//   if (!name || !email || !phone || !password) {
+//     return res.json({ success: false, message: "All fields required" });
+//   }
+
+//   try {
+//     const [rows] = await db.query("SELECT * FROM users WHERE email=?", [email]);
+
+//     if (rows.length > 0) {
+//       return res.json({ success: false, message: "User already exists" });
+//     }
+
+//     const hashedPassword = bcrypt.hashSync(password, 10);
+
+//     await db.query(
+//       "INSERT INTO users(name,email,phone,password,is_verified) VALUES(?,?,?,?,0)",
+//       [name, email, phone, hashedPassword]
+//     );
+
+//     // await client.verify.v2
+//     //   .services(process.env.TWILIO_VERIFY_SID)
+//     //   .verifications.create({ to: "+91" + phone, channel: "sms" });
+//     const FIXED_OTP = "123456";
+
+//     res.json({
+//       success: true,
+//       message: "OTP sent (Fixed). Use 123456.",
+//     });
+//   } catch (error) {
+//     res.json({ success: false, error: error.message });
+//   }
+// };
+
 exports.register = async (req, res) => {
   const { name, email, phone, password } = req.body;
+
+  const profileImage = req.file ? req.file.filename : null;
 
   if (!name || !email || !phone || !password) {
     return res.json({ success: false, message: "All fields required" });
@@ -252,23 +289,20 @@ exports.register = async (req, res) => {
     const hashedPassword = bcrypt.hashSync(password, 10);
 
     await db.query(
-      "INSERT INTO users(name,email,phone,password,is_verified) VALUES(?,?,?,?,0)",
-      [name, email, phone, hashedPassword]
+      "INSERT INTO users(name,email,phone,password,profileImage,is_verified) VALUES(?,?,?,?,?,0)",
+      [name, email, phone, hashedPassword, profileImage]
     );
-
-    // await client.verify.v2
-    //   .services(process.env.TWILIO_VERIFY_SID)
-    //   .verifications.create({ to: "+91" + phone, channel: "sms" });
-    const FIXED_OTP = "123456";
 
     res.json({
       success: true,
-      message: "OTP sent (Fixed). Use 123456.",
+      message: "OTP sent. Use 123456.",
+      profileImage: profileImage,
     });
   } catch (error) {
     res.json({ success: false, error: error.message });
   }
 };
+
 
 
 exports.verifyOtp = async (req, res) => {
