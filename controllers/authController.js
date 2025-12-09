@@ -273,7 +273,7 @@ const { SECRET_KEY } = require("../config/jwt");
 exports.register = async (req, res) => {
   const { name, email, phone, password } = req.body;
 
-  const profileImage = req.file ? req.file.filename : null;
+  const profile_image  = req.file ? req.file.filename : null;
 
   if (!name || !email || !phone || !password) {
     return res.json({ success: false, message: "All fields required" });
@@ -289,14 +289,14 @@ exports.register = async (req, res) => {
     const hashedPassword = bcrypt.hashSync(password, 10);
 
     await db.query(
-      "INSERT INTO users(name,email,phone,password,profileImage,is_verified) VALUES(?,?,?,?,?,0)",
-      [name, email, phone, hashedPassword, profileImage]
+      "INSERT INTO users(name,email,phone,password,profile_image,is_verified) VALUES(?,?,?,?,?,0)",
+      [name, email, phone, hashedPassword, profile_image]
     );
 
     res.json({
       success: true,
       message: "OTP sent. Use 123456.",
-      profileImage: profileImage,
+      profileImage: profile_image,
     });
   } catch (error) {
     res.json({ success: false, error: error.message });
