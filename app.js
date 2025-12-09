@@ -22,17 +22,21 @@ app.use("/", mobileRoutes);
 const profileRoutes = require("./routes/profileRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const wishlistRoutes = require("./routes/wishlistRoutes");
-const addressRoutes = require("./routes/addressRoutes");
 const couponRoutes = require("./routes/couponRoutes");
 const supportRoutes = require("./routes/supportRoutes");
+
+
+// 🟢 NEW ROUTE → Address + Order + Razorpay Combined
+const shopRoutes = require("./routes/shopRoutes");
+const categories=require("./routes/homeRoutes");
 
 app.use("/api/profile", profileRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/wishlist", wishlistRoutes);
-app.use("/api/address", addressRoutes);
 app.use("/api/coupons", couponRoutes);
 app.use("/api/support", supportRoutes);
-
+app.use("/api/shop", shopRoutes);
+app.use("/",categories);
 app.get("/", (req, res) => res.json({ success: true, message: "API Running" }));
 
 module.exports = app;
