@@ -18,7 +18,8 @@ exports.updateProfile = async (req, res) => {
     const { name, email, phone } = req.body;
     let imagePath = null;
     if (req.file) {
-      imagePath = "uploads/" + req.file.filename;
+      // imagePath = "uploads/" + req.file.filename;
+       imagePath =req.file ? req.file.filename : null;
     }
 
     await db.query(
