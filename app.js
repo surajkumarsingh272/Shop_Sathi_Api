@@ -26,17 +26,18 @@
     const supportRoutes = require("./routes/supportRoutes");
 
 
-    // 🟢 NEW ROUTE → Address + Order + Razorpay Combined
-    const shopRoutes = require("./routes/shopRoutes");
+    const RazorpayRoutes = require("./routes/razorpayRoutes");
     const categories=require("./routes/homeRoutes");
     const addressRoutes = require("./routes/addressRoutes");
+    const ratingReviewRoutes = require("./routes/ratingReviewRoutes");
 
+    app.use("/api/reviews", ratingReviewRoutes);
     app.use("/api/profile", profileRoutes);
     app.use("/api/orders", orderRoutes);
     app.use("/wishlist", wishlistRoutes);
     app.use("/api/coupons", couponRoutes);
     app.use("/api/support", supportRoutes);
-    app.use("/api/shop", shopRoutes);
+    app.use("/api/razorpay", RazorpayRoutes);
     app.use("/",categories);
     app.use("/address", addressRoutes);
     app.get("/", (req, res) => res.json({ success: true, message: "API Running" }));

@@ -8,7 +8,7 @@ exports.uploadImage = (req, res) => {
 
 exports.homeProducts = async (req, res) => {
   try {
-    const sql = "SELECT * FROM products ORDER BY rating DESC LIMIT 20";
+    const sql = "SELECT * FROM products ORDER BY rating DESC LIMIT 100";
     const [result] = await db.query(sql);
     res.status(200).json(result);
   } catch (error) {
@@ -16,15 +16,7 @@ exports.homeProducts = async (req, res) => {
   }
 };
 
-exports.categories = async (req, res) => {
-  try {
-    const sql = "SELECT * FROM categories";
-    const [result] = await db.query(sql);
-    res.status(200).json(result);
-  } catch (error) {
-    res.status(400).json({ message: "categories fetch error" });
-  }
-};
+
 
 exports.productScreen = async (req, res) => {
   try {
@@ -238,67 +230,6 @@ exports.purchaseHistory = async (req, res) => {
     res.status(500).json({ message: "Purchase history fetch error" });
   }
 };
-
-// Add to wishlist
-
-// exports.addToWishlist = async (req, res) => {
-//   try {
-//     const { user_id, product_id } = req.body;
-//     const sql = "INSERT INTO wishlist (user_id, product_id) VALUES (?, ?)";
-//     await db.query(sql, [user_id, product_id]);
-//     res.status(200).json({ success: true, message: "Added to wishlist" });
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ message: "Wishlist insert error" });
-//   }
-// };
-
-// exports.getWishlist = async (req, res) => {
-//     try {
-//         const userId = req.params.user_id;
-
-//         const sql = `
-//             SELECT w.id AS wishlist_id,
-//                    p.id AS product_id,
-//                    p.name,
-//                    p.image,
-//                    p.new_price,
-//                    p.old_price,
-//                    p.rating,
-//                    (SELECT COUNT(*) FROM product_reviews pr WHERE pr.product_id = p.id) AS reviews_count
-//             FROM wishlist w
-//             JOIN products p ON p.id = w.product_id
-//             WHERE w.user_id = ?
-//             ORDER BY w.created_at DESC
-//         `;
-
-//         const [result] = await db.query(sql, [userId]);
-
-//         res.status(200).json({
-//             success: true,
-//             wishlist: result
-//         });
-
-//     } catch (err) {
-//         console.error("Wishlist API Error:", err);
-//         res.status(500).json({ message: "Wishlist fetch error" });
-//     }
-// };
-
-// // Remove from wishlist
-// exports.removeFromWishlist = async (req, res) => {
-//   try {
-//     const { user_id, product_id } = req.body;
-//     const sql = "DELETE FROM wishlist WHERE user_id = ? AND product_id = ?";
-//     await db.query(sql, [user_id, product_id]);
-//     res.status(200).json({ success: true, message: "Removed from wishlist" });
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ message: "Wishlist delete error" });
-//   }
-// };
-
-
 
 
 /// suraj kumar singh////

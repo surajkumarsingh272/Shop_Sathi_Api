@@ -1,7 +1,7 @@
 const db = require("../config/db");
 
 exports.addAddress = async (req, res) => {
-  const { user_id,name, mobile, pincode, state, city, house_no,  road_name, address_type,is_default} = req.body;
+  const { user_id, name, mobile, pincode, state, city, house_no, road_name, address_type, is_default } = req.body;
 
   if (!user_id || !name || !mobile || !pincode) {
     return res.json({ success: false, message: "All fields required" });
@@ -14,7 +14,7 @@ exports.addAddress = async (req, res) => {
 
     const sql = `INSERT INTO addresses (user_id, name, mobile, pincode, state, city, house_no, road_name, address_type, is_default)  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
-    await db.query(sql, [user_id,  name,  mobile, pincode,state, city, house_no, road_name,address_type, is_default ]);
+    await db.query(sql, [user_id, name, mobile, pincode, state, city, house_no, road_name, address_type, is_default]);
 
     res.json({
       success: true,
@@ -82,10 +82,10 @@ exports.updateAddress = async (req, res) => {
     }
 
     const sql = `
-      UPDATE addresses 
-      SET name=?, mobile=?, pincode=?, state=?, city=?, house_no=?, road_name=?, address_type=?, is_default=? 
-      WHERE id=?
-    `;
+  UPDATE addresses 
+  SET name=?, mobile=?, pincode=?, state=?, city=?, house_no=?, road_name=?, address_type=?, is_default=?
+  WHERE id=?
+`;
 
     await db.query(sql, [
       name,
@@ -96,7 +96,7 @@ exports.updateAddress = async (req, res) => {
       house_no,
       road_name,
       address_type,
-      is_default,
+      is_default??0,
       id,
     ]);
 

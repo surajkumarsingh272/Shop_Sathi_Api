@@ -63,3 +63,27 @@ exports.getNewProducts = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+
+exports.getProductsByCategory = async (req, res) => {
+  try {
+    const categoryId = req.params.categoryId; 
+    let query = "SELECT * FROM products";
+    
+    if (categoryId !== 1) {
+      query += " WHERE category_id = ?";
+    }
+
+    const [rows] = categoryId === "all" 
+        ? await db.query(query)
+        : await db.query(query, [categoryId]);
+
+    res.json(rows.map(item => ({
+      ...item,
+      image: item.image ? `${BASE_URL}/uploads/${item.image}` : null
+    })));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+

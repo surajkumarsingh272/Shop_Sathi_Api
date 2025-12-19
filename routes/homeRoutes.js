@@ -16,5 +16,8 @@ router.get("/top-products", homeController.getTopProducts);
 
 // New Products
 router.get("/new-products", homeController.getNewProducts);
+// Products by category
+router.get("/products/:categoryId", homeController.getProductsByCategory);
+
 
 module.exports = router;
