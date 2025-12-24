@@ -6,76 +6,6 @@ const db = require("../config/db");
  * ================================
  */
 
-// exports.placeOrder = async (req, res) => {
-//   try {
-//     const userId = req.user.id;
-//     const { products, payment_method, total_amount } = req.body;
-
-//     if (!products || !Array.isArray(products) || products.length === 0) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Products required"
-//       });
-//     }
-
-//     // 🔹 Real world payment logic
-//     let paymentStatus = payment_method === "cod" ? "Unpaid" : "Pending";
-
-//     // 1️⃣ Insert order
-//     const [orderResult] = await db.query(
-//       `INSERT INTO orders 
-//        (user_id, total_amount, order_status, payment_status, payment_method, order_date, created_at)
-//        VALUES (?, ?, ?, ?, ?, NOW(), NOW())`,
-//       [userId, total_amount, "Pending", paymentStatus, payment_method]
-//     );
-
-//     const orderId = orderResult.insertId;
-
-//     // 2️⃣ Insert order items
-//     for (let item of products) {
-//       const { product_id, quantity } = item;
-
-//       const [[product]] = await db.query(
-//         "SELECT new_price FROM products WHERE id = ?",
-//         [product_id]
-//       );
-
-//       if (!product) continue;
-
-//       await db.query(
-//         `INSERT INTO order_items (order_id, product_id, quantity, price)
-//          VALUES (?, ?, ?, ?)`,
-//         [orderId, product_id, quantity, product.new_price]
-//       );
-//     }
-
-//     // 3️⃣ 🔥 AUTO INSERT ORDER TRACKING (VERY IMPORTANT)
-//     let trackingMessage =
-//       payment_method === "cod"
-//         ? "Order placed with Cash on Delivery"
-//         : "Payment initiated, order placed";
-
-//     await db.query(
-//       `INSERT INTO order_tracking (order_id, status, updated_by, message)
-//        VALUES (?, ?, ?, ?)`,
-//       [orderId, "Pending", "system", trackingMessage]
-//     );
-
-//     return res.status(201).json({
-//       success: true,
-//       message: "Order placed successfully",
-//       order_id: orderId
-//     });
-
-//   } catch (error) {
-//     console.error("Place Order Error:", error);
-//     return res.status(500).json({
-//       success: false,
-//       message: "Server error"
-//     });
-//   }
-// };
-
 
 exports.placeOrder = async (req, res) => {
   try {
@@ -402,6 +332,7 @@ exports.cancelOrder = async (req, res) => {
     const { orderId } = req.params;
     const userId = req.user.id;
     const { reason } = req.body; // reason from frontend
+   
 
     // 1️⃣ Order check (ownership + status)
     const [[order]] = await db.query(

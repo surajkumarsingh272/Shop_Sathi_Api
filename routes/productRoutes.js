@@ -8,7 +8,6 @@ const cartController = require("../controllers/cartController");
 
 router.get("/home-products", productController.homeProducts);
 
-
 router.get("/product-screen", productController.productScreen);
 
 router.post("/upload", upload.single("image"), productController.uploadImage);

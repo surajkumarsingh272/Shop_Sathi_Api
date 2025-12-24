@@ -1,7 +1,7 @@
 
 const db = require("../config/db");
 
-const BASE_URL = "http://10.170.190.64:3000";
+const BASE_URL = "http://10.220.249.64:3000";
 
 function withImageURL(rows) {
   return rows.map(item => ({

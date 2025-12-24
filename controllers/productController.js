@@ -74,6 +74,7 @@ exports.getProductById = async (req, res) => {
   }
 };
 
+
 exports.getProductColors = async (req, res) => {
   try {
     const sql = "SELECT * FROM product_colors WHERE product_id = ?";

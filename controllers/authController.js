@@ -279,10 +279,15 @@ exports.register = async (req, res) => {
   }
 
   try {
-    const [rows] = await db.query("SELECT * FROM users WHERE email=?", [email]);
+    const [rows] = await db.query("SELECT * FROM users WHERE email=? OR phone = ?",  [email, phone]);
 
     if (rows.length > 0) {
-      return res.json({ success: false, message: "User already exists" });
+      if (rows[0].email === email) {
+        return res.json({ success: false, message: "Email already registered" });
+      }
+      if (rows[0].phone === phone) {
+        return res.json({ success: false, message: "Phone already registered" });
+      }
     }
 
     const hashedPassword = bcrypt.hashSync(password, 10);
@@ -297,9 +302,11 @@ exports.register = async (req, res) => {
       message: "OTP sent. Use 123456.",
       profileImage: profile_image,
     });
+
   } catch (error) {
     res.json({ success: false, error: error.message });
   }
+  
 };
 
 
@@ -335,7 +342,7 @@ exports.verifyOtp = async (req, res) => {
     const user = rows[0];
 
     const accessToken = jwt.sign({ id: user.id, email: user.email }, SECRET_KEY, { expiresIn: "15m" });
-    const refreshToken = jwt.sign({ id: user.id, email: user.email }, SECRET_KEY, { expiresIn: "7d" });
+    const refreshToken = jwt.sign({ id: user.id, email: user.email }, SECRET_KEY, { expiresIn: "30d" });
 
     await db.query("UPDATE users SET refresh_token=? WHERE id=?", [refreshToken, user.id]);
 
@@ -372,7 +379,7 @@ exports.login = async (req, res) => {
       return res.json({ success: false, message: "Invalid password" });
 
     const accessToken = jwt.sign({ id: user.id, email: user.email }, SECRET_KEY, { expiresIn: "15m" });
-    const refreshToken = jwt.sign({ id: user.id, email: user.email }, SECRET_KEY, { expiresIn: "7d" });
+    const refreshToken = jwt.sign({ id: user.id, email: user.email }, SECRET_KEY, { expiresIn: "30d" });
 
     await db.query("UPDATE users SET refresh_token=? WHERE id=?", [refreshToken, user.id]);
 
@@ -478,7 +485,7 @@ exports.profile = async (req, res) => {
       const decoded = jwt.verify(token, SECRET_KEY);
 
       const [rows] = await db.query(
-        "SELECT id, name, email, phone, is_verified, created_at FROM users WHERE id=?",
+        "SELECT id, name, email, phone, profile_image, is_verified, created_at FROM users WHERE id=?",
         [decoded.id]
       );
 

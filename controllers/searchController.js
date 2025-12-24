@@ -1,30 +1,58 @@
 const db = require("../config/db");
 
 exports.search = async (req, res) => {
-  const query = req.query.q;
-  if (!query) return res.status(400).json({ message: "Query is required" });
+  const { q, categoryId } = req.query;
+
+  if (!q) {
+    return res.json({ success: true, products: [] });
+  }
 
   try {
-    const cleanQuery = query.toLowerCase();
-
-    const sql = `
-      SELECT id, name, new_price, old_price, image, rating, discount
+    let sql = `
+      SELECT id, name, new_price, old_price, image, rating, discount, category_id
       FROM products
       WHERE LOWER(name) LIKE ?
-      LIMIT 10
     `;
 
-    const [result] = await db.query(sql, [`%${cleanQuery}%`]);
+    const keyword = q.toLowerCase();
+    const values = [`%${keyword}%`];
 
-    res.status(200).json({
+    // 🔥 category filter (except All)
+    if (categoryId && categoryId != 1) {
+      sql += ` AND category_id = ?`;
+      values.push(categoryId);
+    }
+
+    // 🔥 RELEVANCE SORTING (Flipkart style)
+    sql += `
+      ORDER BY
+        CASE
+          WHEN LOWER(name) LIKE ? THEN 1      -- starts with keyword
+          WHEN LOWER(name) LIKE ? THEN 2      -- exact word match
+          ELSE 3
+        END,
+        LENGTH(name) ASC
+      LIMIT 20
+    `;
+
+    values.push(
+      `${keyword}%`,     // bluetooth%
+      `% ${keyword}%`    // bluetooth as word
+    );
+
+    const [result] = await db.query(sql, values);
+
+    res.json({
       success: true,
-      total: result.length,
       products: result,
     });
   } catch (err) {
-    res.status(500).json({ message: "Search fetch error" });
+    console.error(err);
+    res.status(500).json({ success: false, message: "Search error" });
   }
 };
+
+
 
 exports.addRecentSearch = async (req, res) => {
   const { user_id, keyword } = req.body;
