@@ -47,7 +47,7 @@ exports.getReviewsByProduct = async (req, res) => {
 
   try {
     const [reviews] = await db.query(
-      `SELECT r.id, r.rating, r.review_text, r.created_at,
+      `SELECT r.id, r.rating, r.review_text, r.created_at, r.user_id,  
               u.name AS user_name, u.profile_image
        FROM product_reviews r
        JOIN users u ON u.id = r.user_id

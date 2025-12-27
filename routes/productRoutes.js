@@ -57,7 +57,9 @@ router.post("/product/:id/add-color", productController.addProductColor);
 
 router.post("/product/:id/add-description", productController.addProductDescription);
 
-router.post("/product/:id/add-image", upload.single("image"), productController.addProductImage);
+// router.post("/product/:id/add-image", upload.single("image"), productController.addProductImage);
+
+router.post("/product/:id/add-image", upload.array("images", 5),productController.addProductImage);
 
 router.post("/product/:id/add-offer", productController.addProductOffer);
 

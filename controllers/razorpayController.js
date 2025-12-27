@@ -42,9 +42,11 @@ exports.createPaymentOrder = async (req, res) => {
       key: process.env.RAZORPAY_KEY,
     });
   } catch (err) {
+    console.error("Razorpay create order error:", err); // << add this
     res.status(500).json({ success:false, message:"Order create failed" });
   }
 };
+
 
 exports.verifyPayment = async (req, res) => {
   try {
@@ -64,6 +66,19 @@ exports.verifyPayment = async (req, res) => {
       return res.status(400).json({ success:false, message:"Invalid signature" });
     }
 
+    
+    const [orderRows] = await db.query(
+      "SELECT user_id, total_amount FROM orders WHERE id=? AND razorpay_order_id=?",
+      [order_id, razorpay_order_id]
+    );
+
+    if (!orderRows.length) {
+      return res.status(400).json({ success:false, message:"Order not found" });
+    }
+
+    const { user_id, total_amount } = orderRows[0];
+
+  
     await db.query(
       `UPDATE orders 
        SET payment_status='Paid',
@@ -73,8 +88,39 @@ exports.verifyPayment = async (req, res) => {
       [razorpay_payment_id, order_id, razorpay_order_id]
     );
 
+  
+    await db.query(
+      `INSERT INTO payments (
+          order_id,
+          user_id,
+          payment_gateway,
+          razorpay_order_id,
+          razorpay_payment_id,
+          razorpay_signature,
+          amount,
+          currency,
+          payment_status,
+          payment_response,
+          created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+      [
+        order_id,
+        user_id,
+        "Razorpay",
+        razorpay_order_id,
+        razorpay_payment_id,
+        razorpay_signature,
+        total_amount,
+        "INR",
+        "Paid",
+        JSON.stringify(req.body)  
+      ]
+    );
+
     res.json({ success:true, message:"Payment verified" });
+
   } catch (err) {
+    console.error("Payment verification error:", err);
     res.status(500).json({ success:false, message:"Verify failed" });
   }
 };

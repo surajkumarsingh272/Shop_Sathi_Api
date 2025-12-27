@@ -282,24 +282,34 @@ exports.addProductDescription = async (req, res) => {
 };
 
 
+
 exports.addProductImage = async (req, res) => {
   try {
-    if (!req.file)
-      return res.status(400).json({ message: "Image is required" });
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ message: "Images are required" });
+    }
 
-    const image_url = req.file.filename;
     const product_id = req.params.id;
 
+    const values = req.files.map(file => [
+      product_id,
+      file.filename
+    ]);
+
     await db.query(
-      "INSERT INTO product_images (product_id, image_url) VALUES (?, ?)",
-      [product_id, image_url]
+      "INSERT INTO product_images (product_id, image_url) VALUES ?",
+      [values]
     );
 
-    res.json({ message: "Image added successfully" });
+    res.json({
+      message: "Multiple images added successfully",
+      totalImages: req.files.length
+    });
   } catch (err) {
     res.status(400).json({ message: "Add image error", err });
   }
 };
+
 
 
 exports.addProductOffer = async (req, res) => {
