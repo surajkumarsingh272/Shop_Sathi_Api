@@ -1,7 +1,7 @@
 
 const db = require("../config/db");
 
-const BASE_URL = "http://10.73.125.64:3000";
+const BASE_URL = "https://shop-sathi-api.onrender.com";
 
 function withImageURL(rows) {
   return rows.map(item => ({
