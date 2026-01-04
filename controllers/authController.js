@@ -234,41 +234,6 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { SECRET_KEY } = require("../config/jwt");
 
-// exports.register = async (req, res) => {
-//   const { name, email, phone, password } = req.body;
-
-//   if (!name || !email || !phone || !password) {
-//     return res.json({ success: false, message: "All fields required" });
-//   }
-
-//   try {
-//     const [rows] = await db.query("SELECT * FROM users WHERE email=?", [email]);
-
-//     if (rows.length > 0) {
-//       return res.json({ success: false, message: "User already exists" });
-//     }
-
-//     const hashedPassword = bcrypt.hashSync(password, 10);
-
-//     await db.query(
-//       "INSERT INTO users(name,email,phone,password,is_verified) VALUES(?,?,?,?,0)",
-//       [name, email, phone, hashedPassword]
-//     );
-
-//     // await client.verify.v2
-//     //   .services(process.env.TWILIO_VERIFY_SID)
-//     //   .verifications.create({ to: "+91" + phone, channel: "sms" });
-//     const FIXED_OTP = "123456";
-
-//     res.json({
-//       success: true,
-//       message: "OTP sent (Fixed). Use 123456.",
-//     });
-//   } catch (error) {
-//     res.json({ success: false, error: error.message });
-//   }
-// };
-
 exports.register = async (req, res) => {
   const { name, email, phone, password } = req.body;
 
@@ -471,35 +436,6 @@ exports.refreshToken = async (req, res) => {
   }
 };
 
-exports.profile = async (req, res) => {
-  try {
-    const authHeader = req.headers["authorization"];
-    if (!authHeader)
-      return res.status(401).json({ success: false, message: "Access token required" });
-
-    const token = authHeader.split(" ")[1];
-    if (!token)
-      return res.status(401).json({ success: false, message: "Access token required" });
-
-    try {
-      const decoded = jwt.verify(token, SECRET_KEY);
-
-      const [rows] = await db.query(
-        "SELECT id, name, email, phone, profile_image, is_verified, created_at FROM users WHERE id=?",
-        [decoded.id]
-      );
-
-      if (rows.length === 0)
-        return res.status(404).json({ success: false, message: "User not found" });
-
-      return res.json({ success: true, user: rows[0] });
-    } catch (err) {
-      return res.status(401).json({ success: false, message: "Invalid or expired token" });
-    }
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-};
 
 exports.logout = async (req, res) => {
   const { refreshToken } = req.body;
@@ -515,3 +451,4 @@ exports.logout = async (req, res) => {
     res.json({ success: false, error: error.message });
   }
 };
+  

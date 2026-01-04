@@ -30,6 +30,7 @@
     const categories=require("./routes/homeRoutes");
     const addressRoutes = require("./routes/addressRoutes");
     const ratingReviewRoutes = require("./routes/ratingReviewRoutes");
+    const googleAuthRoutes = require("./routes/googleAuthRoutes");
 
     app.use("/api/reviews", ratingReviewRoutes);
     app.use("/api/profile", profileRoutes);
@@ -40,6 +41,8 @@
     app.use("/api/razorpay", RazorpayRoutes);
     app.use("/",categories);
     app.use("/address", addressRoutes);
+    app.use("/auth", googleAuthRoutes);
+    
     app.get("/", (req, res) => res.json({ success: true, message: "API Running" }));
 
     module.exports = app;

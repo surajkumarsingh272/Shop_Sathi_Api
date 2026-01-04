@@ -1,12 +1,5 @@
 const db = require("../config/db");
 
-/**
- * ================================
- * 1️⃣ PLACE ORDER
- * ================================
- */
-
-
 exports.placeOrder = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -19,10 +12,9 @@ exports.placeOrder = async (req, res) => {
       });
     }
 
-    // Initial payment status
+   
     let paymentStatus = payment_method === "cod" ? "Unpaid" : "Pending";
 
-    // 1️⃣ Insert order
     const [orderResult] = await db.query(
       `INSERT INTO orders 
        (user_id, total_amount, order_status, payment_status, payment_method, order_date, created_at)
@@ -32,7 +24,6 @@ exports.placeOrder = async (req, res) => {
 
     const orderId = orderResult.insertId;
 
-    // 2️⃣ Insert order items
     for (let item of products) {
       const { product_id, quantity } = item;
 
@@ -50,7 +41,7 @@ exports.placeOrder = async (req, res) => {
       );
     }
 
-    // 3️⃣ Insert initial order tracking
+    // 3️ Insert initial order tracking
     let trackingMessage =
       payment_method === "cod"
         ? "Order placed with Cash on Delivery"
@@ -62,7 +53,7 @@ exports.placeOrder = async (req, res) => {
       [orderId, "Pending", "system", trackingMessage]
     );
 
-    // 4️⃣ Simulate automatic order status updates
+    // 4️ Simulate automatic order status updates
     simulateOrderProgress(orderId);
 
     return res.status(201).json({
@@ -80,14 +71,13 @@ exports.placeOrder = async (req, res) => {
   }
 };
 
-/**
- * 🔹 Simulate order status progress for testing/demo purposes
- */
+ //Simulate order status progress for testing/demo purposes
+ 
 async function simulateOrderProgress(orderId) {
   const steps = [
-    { status: "Processing", message: "Order is being processed", delay: 40 },
-    { status: "Shipped", message: "Order has been shipped", delay: 50 },
-    { status: "Delivered", message: "Order delivered to customer", delay: 100 },
+    { status: "Processing", message: "Order is being processed", delay: 20 },
+    { status: "Shipped", message: "Order has been shipped", delay: 30 },
+    { status: "Delivered", message: "Order delivered to customer", delay: 40 },
   ];
 
   for (let step of steps) {

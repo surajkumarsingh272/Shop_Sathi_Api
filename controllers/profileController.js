@@ -13,6 +13,7 @@ exports.getMyProfile = async (req, res) => {
   }
 };
 
+
 exports.updateProfile = async (req, res) => {
   try {
     const { name, email, phone } = req.body;
