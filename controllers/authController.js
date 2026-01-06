@@ -306,7 +306,7 @@ exports.verifyOtp = async (req, res) => {
 
     const user = rows[0];
 
-    const accessToken = jwt.sign({ id: user.id, email: user.email }, SECRET_KEY, { expiresIn: "15m" });
+    const accessToken = jwt.sign({ id: user.id, email: user.email }, SECRET_KEY, { expiresIn: "30d" });
     const refreshToken = jwt.sign({ id: user.id, email: user.email }, SECRET_KEY, { expiresIn: "30d" });
 
     await db.query("UPDATE users SET refresh_token=? WHERE id=?", [refreshToken, user.id]);
@@ -343,7 +343,7 @@ exports.login = async (req, res) => {
     if (!valid)
       return res.json({ success: false, message: "Invalid password" });
 
-    const accessToken = jwt.sign({ id: user.id, email: user.email }, SECRET_KEY, { expiresIn: "15m" });
+    const accessToken = jwt.sign({ id: user.id, email: user.email }, SECRET_KEY, { expiresIn: "30d" });
     const refreshToken = jwt.sign({ id: user.id, email: user.email }, SECRET_KEY, { expiresIn: "30d" });
 
     await db.query("UPDATE users SET refresh_token=? WHERE id=?", [refreshToken, user.id]);
@@ -428,7 +428,7 @@ exports.refreshToken = async (req, res) => {
 
     const user = rows[0];
 
-    const newAccessToken = jwt.sign({ id: user.id, email: user.email }, SECRET_KEY, { expiresIn: "15m" });
+    const newAccessToken = jwt.sign({ id: user.id, email: user.email }, SECRET_KEY, { expiresIn: "30d" });
 
     res.json({ success: true, accessToken: newAccessToken });
   } catch (error) {

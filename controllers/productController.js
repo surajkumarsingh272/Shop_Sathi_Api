@@ -16,8 +16,6 @@ exports.homeProducts = async (req, res) => {
   }
 };
 
-
-
 exports.productScreen = async (req, res) => {
   try {
     const sql = "SELECT * FROM products ORDER BY rating DESC LIMIT 50";

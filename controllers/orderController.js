@@ -1,116 +1,288 @@
 const db = require("../config/db");
 
-exports.placeOrder = async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const { products, payment_method, total_amount } = req.body;
 
+// 🛠️ Helper Function: Sab kuch calculate karne ke liye
+async function calculateOrderAmount(connection, products) {
+  let subTotal = 0;
+  let discount = 0;
+  let items = [];
+
+  for (let item of products) {
+    if (!item.quantity || item.quantity < 1) throw new Error("Invalid quantity");
+
+    // Price Verification from DB
+    const [[product]] = await connection.query(
+      "SELECT id, old_price, new_price FROM products WHERE id = ?",
+      [item.product_id]
+    );
+
+    if (!product) throw new Error(`Product ${item.product_id} not found`);
+
+    subTotal += product.old_price * item.quantity;
+    discount += (product.old_price - product.new_price) * item.quantity;
+
+    items.push({
+      product_id: product.id,
+      quantity: item.quantity,
+      price: product.new_price
+    });
+  }
+
+  // Logic: 500 se kam pe 50 delivery charge
+  const netAmount = subTotal - discount;
+  const deliveryCharge = netAmount >= 500 ? 0 : 50;
+  const total = netAmount + deliveryCharge;
+
+  return { subTotal, discount, deliveryCharge, total, items };
+}
+
+exports.getCheckoutSummary = async (req, res) => {
+  try {
+    const { products } = req.body;
     if (!products || !Array.isArray(products) || products.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Products required"
-      });
+      return res.status(400).json({ success: false, message: "Products required" });
     }
 
-   
-    let paymentStatus = payment_method === "cod" ? "Unpaid" : "Pending";
+    const { subTotal, discount, deliveryCharge, total } = await calculateOrderAmount(db, products);
 
-    const [orderResult] = await db.query(
-      `INSERT INTO orders 
-       (user_id, total_amount, order_status, payment_status, payment_method, order_date, created_at)
-       VALUES (?, ?, ?, ?, ?, NOW(), NOW())`,
-      [userId, total_amount, "Pending", paymentStatus, payment_method]
+    const d = new Date();
+    d.setDate(d.getDate() + 4);
+
+    res.json({
+      success: true,
+      summary: {
+        subtotal: subTotal,
+        discount,
+        delivery_charge: deliveryCharge,
+        total_payable: total,
+        estimated_delivery: d.toDateString()
+      }
+    });
+  } catch (e) {
+    res.status(400).json({ success: false, message: e.message });
+  }
+};
+
+exports.placeOrder = async (req, res) => {
+  const connection = await db.getConnection();
+  try {
+    const userId = req.user.id;
+    const { products, payment_method, address_id } = req.body;
+
+    if (!products || !Array.isArray(products) || products.length === 0) {
+      return res.status(400).json({ success: false, message: "Products required" });
+    }
+
+    await connection.beginTransaction();
+
+    const { total, items } = await calculateOrderAmount(connection, products);
+
+    // ✅ FIX: Status hamesha "Pending" rakhein taaki Flutter mein Empty Box na dikhe
+    // "Draft" word ko hata diya hai kyunki aapka UI usse nahi pehchanta
+    const orderStatus = "Pending"; 
+    const paymentStatus = payment_method === "cod" ? "Unpaid" : "Awaiting Payment";
+
+    const [orderResult] = await connection.query(
+      `INSERT INTO orders (user_id, total_amount, order_status, payment_status, payment_method, address_id, order_date, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+      [userId, total, orderStatus, paymentStatus, payment_method, address_id]
     );
 
     const orderId = orderResult.insertId;
 
-    for (let item of products) {
-      const { product_id, quantity } = item;
-
-      const [[product]] = await db.query(
-        "SELECT new_price FROM products WHERE id = ?",
-        [product_id]
-      );
-
-      if (!product) continue;
-
-      await db.query(
-        `INSERT INTO order_items (order_id, product_id, quantity, price)
-         VALUES (?, ?, ?, ?)`,
-        [orderId, product_id, quantity, product.new_price]
+    // Order items insert karna
+    for (let item of items) {
+      await connection.query(
+        "INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)",
+        [orderId, item.product_id, item.quantity, item.price]
       );
     }
 
-    // 3️ Insert initial order tracking
-    let trackingMessage =
-      payment_method === "cod"
-        ? "Order placed with Cash on Delivery"
-        : "Payment initiated, order placed";
-
-    await db.query(
+    // Tracking table mein entry (Hamesha Pending status se start hoga)
+    await connection.query(
       `INSERT INTO order_tracking (order_id, status, updated_by, message)
        VALUES (?, ?, ?, ?)`,
-      [orderId, "Pending", "system", trackingMessage]
+      [orderId, orderStatus, "system", payment_method === "cod" ? "Order placed with Cash on Delivery" : "Waiting for online payment verification"]
     );
 
-    // 4️ Simulate automatic order status updates
-    simulateOrderProgress(orderId);
+    await connection.commit();
+
+    // ✅ LOGIC: Simulation sirf COD ke liye yahan se chalegi
+    if (payment_method === "cod") {
+      simulateOrderProgress(orderId);
+    }
 
     return res.status(201).json({
       success: true,
-      message: "Order placed successfully",
-      order_id: orderId
+      message: payment_method === "cod" ? "Order placed successfully" : "Order initiated, awaiting payment",
+      order_id: orderId,
+      total_amount: total
     });
 
   } catch (error) {
-    console.error("Place Order Error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Server error"
-    });
+    await connection.rollback();
+    console.error("Order Error:", error);
+    return res.status(500).json({ success: false, message: error.message || "Server error" });
+  } finally {
+    connection.release();
   }
 };
 
+exports.simulateOrderProgress = async (orderId) => {
+    console.log(`Simulation started for Order ID: ${orderId}`);
+
+    const steps = [
+        { status: "processing", message: "Your order is being prepared and packed", delay: 35 },
+        { status: "shipped", message: "Order has been handed over to our delivery partner", delay: 45 },
+        { status: "delivered", message: "Order delivered successfully! Thank you for shopping.", delay: 55 }
+    ];
+
+    for (const step of steps) {
+        try {
+            await new Promise(resolve => setTimeout(resolve, step.delay * 1000));
+
+            const [orderCheck] = await db.query(
+                "SELECT order_status FROM orders WHERE id = ?", 
+                [orderId]
+            );
+
+            if (!orderCheck.length || orderCheck[0].order_status.toLowerCase() === 'cancelled') {
+                console.log(`Order ${orderId} was cancelled. Stopping simulation.`);
+                break; 
+            }
+
+            await db.query(
+                "UPDATE orders SET order_status = ? WHERE id = ?",
+                [step.status, orderId]
+            );
+
+            await db.query(
+                `INSERT INTO order_tracking (order_id, status, updated_by, message) 
+                 VALUES (?, ?, ?, ?)`,
+                [orderId, step.status, "system", step.message]
+            );
+
+            console.log(`Order ${orderId} updated to: ${step.status}`);
+
+        } catch (error) {
+            console.error(`Error in simulation step ${step.status}:`, error);
+          
+        }
+    }
+};
+// exports.placeOrder = async (req, res) => {
+//   try {
+//     const userId = req.user.id;
+//     const { products, payment_method, total_amount } = req.body;
+
+//     if (!products || !Array.isArray(products) || products.length === 0) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Products required"
+//       });
+//     }
+
+   
+//     let paymentStatus = payment_method === "cod" ? "Unpaid" : "Pending";
+
+//     const [orderResult] = await db.query(
+//       `INSERT INTO orders 
+//        (user_id, total_amount, order_status, payment_status, payment_method, order_date, created_at)
+//        VALUES (?, ?, ?, ?, ?, NOW(), NOW())`,
+//       [userId, total_amount, "Pending", paymentStatus, payment_method]
+//     );
+
+//     const orderId = orderResult.insertId;
+
+//     for (let item of products) {
+//       const { product_id, quantity } = item;
+
+//       const [[product]] = await db.query(
+//         "SELECT new_price FROM products WHERE id = ?",
+//         [product_id]
+//       );
+
+//       if (!product) continue;
+
+//       await db.query(
+//         `INSERT INTO order_items (order_id, product_id, quantity, price)
+//          VALUES (?, ?, ?, ?)`,
+//         [orderId, product_id, quantity, product.new_price]
+//       );
+//     }
+
+//     // 3️ Insert initial order tracking
+//     let trackingMessage =
+//       payment_method === "cod"
+//         ? "Order placed with Cash on Delivery"
+//         : "Payment initiated, order placed";
+
+//     await db.query(
+//       `INSERT INTO order_tracking (order_id, status, updated_by, message)
+//        VALUES (?, ?, ?, ?)`,
+//       [orderId, "Pending", "system", trackingMessage]
+//     );
+
+//     // 4️ Simulate automatic order status updates
+//     simulateOrderProgress(orderId);
+
+//     return res.status(201).json({
+//       success: true,
+//       message: "Order placed successfully",
+//       order_id: orderId
+//     });
+
+//   } catch (error) {
+//     console.error("Place Order Error:", error);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Server error"
+//     });
+//   }
+// };
+
  //Simulate order status progress for testing/demo purposes
  
-async function simulateOrderProgress(orderId) {
-  const steps = [
-    { status: "Processing", message: "Order is being processed", delay: 20 },
-    { status: "Shipped", message: "Order has been shipped", delay: 30 },
-    { status: "Delivered", message: "Order delivered to customer", delay: 40 },
-  ];
+// async function simulateOrderProgress(orderId) {
+//   const steps = [
+//     { status: "Processing", message: "Order is being processed", delay: 20 },
+//     { status: "Shipped", message: "Order has been shipped", delay: 30 },
+//     { status: "Delivered", message: "Order delivered to customer", delay: 40 },
+//   ];
 
-  for (let step of steps) {
-    await new Promise((resolve) => setTimeout(resolve, step.delay * 1000));
+//   for (let step of steps) {
+//     await new Promise((resolve) => setTimeout(resolve, step.delay * 1000));
 
-    // 🔥 CHECK CURRENT ORDER STATUS
-    const [[order]] = await db.query(
-      "SELECT order_status FROM orders WHERE id = ?",
-      [orderId]
-    );
+//     // 🔥 CHECK CURRENT ORDER STATUS
+//     const [[order]] = await db.query(
+//       "SELECT order_status FROM orders WHERE id = ?",
+//       [orderId]
+//     );
 
-    // 🔥 STOP IF ORDER CANCELLED
-    if (!order || order.order_status.toLowerCase() === "cancelled") {
-      console.log(`Order ${orderId} stopped due to cancellation`);
-      break;
-    }
+//     // 🔥 STOP IF ORDER CANCELLED
+//     if (!order || order.order_status.toLowerCase() === "cancelled") {
+//       console.log(`Order ${orderId} stopped due to cancellation`);
+//       break;
+//     }
 
-    // ✅ UPDATE ORDER STATUS
-    await db.query(
-      `UPDATE orders SET order_status = ? WHERE id = ?`,
-      [step.status, orderId]
-    );
+//     // ✅ UPDATE ORDER STATUS
+//     await db.query(
+//       `UPDATE orders SET order_status = ? WHERE id = ?`,
+//       [step.status, orderId]
+//     );
 
-    // ✅ INSERT TRACKING
-    await db.query(
-      `INSERT INTO order_tracking (order_id, status, updated_by, message)
-       VALUES (?, ?, ?, ?)`,
-      [orderId, step.status, "system", step.message]
-    );
+//     // ✅ INSERT TRACKING
+//     await db.query(
+//       `INSERT INTO order_tracking (order_id, status, updated_by, message)
+//        VALUES (?, ?, ?, ?)`,
+//       [orderId, step.status, "system", step.message]
+//     );
 
-    console.log(`Order ${orderId} updated to ${step.status}`);
-  }
-}
+//     console.log(`Order ${orderId} updated to ${step.status}`);
+//   }
+// }
+
+
 
 /**
  * ================================
@@ -254,66 +426,113 @@ exports.trackOrder = async (req, res) => {
  * 5️⃣ GET SINGLE ORDER DETAIL
  * ================================
  */
+// exports.getOrderById = async (req, res) => {
+//   try {
+//     const { orderId } = req.params;
+
+//     // Get order info
+//     const [orders] = await db.query(
+//       `SELECT 
+//         id,
+//         total_amount,
+//         order_status,
+//         payment_status,
+//         payment_method,
+//         order_date,
+//         created_at
+//       FROM orders
+//       WHERE id = ? AND user_id = ?`,
+//       [orderId, req.user.id]
+//     );
+
+//     if (!orders.length) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Order not found"
+//       });
+//     }
+
+//     const order = orders[0];
+
+//     // Get products of this order
+//     const [products] = await db.query(
+//       `SELECT 
+//         p.id AS product_id,
+//         p.name,
+//         p.image,
+//         p.rating,
+//         oi.quantity,
+//         oi.price AS single_price,
+//         (oi.quantity * oi.price) AS total_price,
+//         p.old_price,
+//         p.new_price,
+//         p.discount
+//       FROM order_items oi
+//       INNER JOIN products p ON p.id = oi.product_id
+//       WHERE oi.order_id = ?`,
+//       [orderId]
+//     );
+
+//     order.products = products;
+
+//     return res.status(200).json({
+//       success: true,
+//       order
+//     });
+
+//   } catch (error) {
+//     console.error("Get Order By Id Error:", error);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Server error"
+//     });
+//   }
+// };
+
+
 exports.getOrderById = async (req, res) => {
+  console.log("!!! NAYA CODE CHAL GAYA !!!");
   try {
     const { orderId } = req.params;
+    const userId = req.user.id;
 
-    // Get order info
+    // Is query ko dhyan se dekho, isme customer_name aur shipping_address hai
     const [orders] = await db.query(
       `SELECT 
-        id,
-        total_amount,
-        order_status,
-        payment_status,
-        payment_method,
-        order_date,
-        created_at
-      FROM orders
-      WHERE id = ? AND user_id = ?`,
-      [orderId, req.user.id]
+        o.id, o.total_amount, o.order_status, o.payment_status, o.payment_method, o.order_date, o.created_at,
+        u.name AS customer_name, 
+        a.mobile AS customer_phone, 
+        CONCAT(a.house_no, ', ', a.road_name, ', ', a.city, ', ', a.state, ' - ', a.pincode) AS shipping_address,
+        p.razorpay_payment_id AS payment_id 
+      FROM orders o
+      LEFT JOIN users u ON o.user_id = u.id
+      LEFT JOIN addresses a ON o.address_id = a.id
+      LEFT JOIN payments p ON o.id = p.order_id
+      WHERE o.id = ? AND o.user_id = ?`,
+      [orderId, userId]
     );
 
-    if (!orders.length) {
-      return res.status(404).json({
-        success: false,
-        message: "Order not found"
-      });
-    }
+    if (orders.length === 0) return res.status(404).json({ success: false, message: "Order not found" });
 
     const order = orders[0];
-
-    // Get products of this order
     const [products] = await db.query(
-      `SELECT 
-        p.id AS product_id,
-        p.name,
-        p.image,
-        p.rating,
-        oi.quantity,
-        oi.price AS single_price,
-        (oi.quantity * oi.price) AS total_price,
-        p.old_price,
-        p.new_price,
-        p.discount
-      FROM order_items oi
-      INNER JOIN products p ON p.id = oi.product_id
-      WHERE oi.order_id = ?`,
-      [orderId]
+      `SELECT p.id AS product_id, p.name, p.image, p.rating, 
+              oi.quantity, oi.price AS single_price, (oi.quantity * oi.price) AS total_price,
+              p.old_price, p.new_price, p.discount
+       FROM order_items oi
+       INNER JOIN products p ON p.id = oi.product_id
+       WHERE oi.order_id = ?`, [orderId]
     );
 
     order.products = products;
 
-    return res.status(200).json({
-      success: true,
-      order
-    });
+    // Isse confirm hoga ki naya code chal raha hai
+    console.log("SUCCESS: Sending New Data Structure for Order:", orderId);
 
+    res.status(200).json({ success: true, order });
   } catch (error) {
-    console.error("Get Order By Id Error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Server error"
-    });
+    console.error("DEBUG ERROR:", error);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
