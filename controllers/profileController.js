@@ -17,6 +17,8 @@ exports.getMyProfile = async (req, res) => {
 exports.updateProfile = async (req, res) => {
   try {
     const { name, email, phone } = req.body;
+    const finalPhone = (phone && phone.trim() !== "") ? phone : null;
+
     let imagePath = null;
     if (req.file) {
       // imagePath = "uploads/" + req.file.filename;
@@ -30,7 +32,7 @@ exports.updateProfile = async (req, res) => {
            phone = ?, 
            profile_image = COALESCE(?, profile_image)
        WHERE id = ?`,
-      [name, email, phone, imagePath, req.user.id]
+      [name, email, finalPhone, imagePath, req.user.id]
     );
 
     res.json({
