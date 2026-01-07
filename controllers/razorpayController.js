@@ -177,9 +177,7 @@ exports.verifyPayment = async (req, res) => {
 
     await connection.commit();
 
-    if (typeof simulateOrderProgress === 'function') {
-        simulateOrderProgress(order_id); 
-    }
+    simulateOrderProgress(order_id);
 
     res.json({ 
       success: true, 
@@ -194,3 +192,4 @@ exports.verifyPayment = async (req, res) => {
     if (connection) connection.release();
   }
 };
+
