@@ -1,37 +1,6 @@
 
 const db = require("../config/db");
 
-// exports.getWishlist = async (req, res) => {
-//   try {
-//     const userId = req.user.id;
-
-//     const [rows] = await db.query(
-//       `SELECT w.id, w.product_id, p.name, p.new_proce, p.image AS product_image
-//        FROM wishlist w
-//        JOIN products p ON w.product_id = p.id
-//        WHERE w.user_id = ?`,
-//       [userId]
-//     );
-
-//     res.json({ success: true, data: rows });
-//   } catch (err) {
-//     res.status(500).json({ success: false, message: err.message });
-//   }
-// };
-
-// POST /wishlist
-// exports.addToWishlist = async (req, res) => {
-//   try {
-//     const { user_id, product_id } = req.body; // make sure body has correct fields
-//     const sql = "INSERT INTO wishlist (user_id, product_id) VALUES (?, ?)";
-//     await db.query(sql, [user_id, product_id]);
-//     res.status(200).json({ success: true, message: "Added to wishlist" });
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ message: "Wishlist insert error" });
-//   }
-// };
-
 exports.addToWishlist = async (req, res) => {
   try {
     const user_id = req.user.id;  // <-- JWT se aayega, body se nahi

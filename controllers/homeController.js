@@ -10,6 +10,7 @@ function withImageURL(rows) {
   }));
 }
 
+
 exports.getBanners = async (req, res) => {
   try {
     const [rows] = await db.query("SELECT * FROM banners ORDER BY id DESC");
