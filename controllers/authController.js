@@ -4,31 +4,63 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { SECRET_KEY } = require("../config/jwt");
 
+// exports.register = async (req, res) => {
+//   const { name, email, phone, password } = req.body;
+
+//   const profile_image  = req.file ? req.file.filename : null;
+
+//   if (!name || !email || !phone || !password) {
+//     return res.json({ success: false, message: "All fields required" });
+//   }
+
+//   try {
+//     const [rows] = await db.query("SELECT * FROM users WHERE email=? OR phone = ?",  [email, phone]);
+
+//     if (rows.length > 0) {
+//       if (rows[0].email === email) {
+//         return res.json({ success: false, message: "Email already registered" });
+//       }
+//       if (rows[0].phone === phone) {
+//         return res.json({ success: false, message: "Phone already registered" });
+//       }
+//     }
+
+//     const hashedPassword = bcrypt.hashSync(password, 10);
+
+//     await db.query(
+//       "INSERT INTO users(name,email,phone,password,profile_image,is_verified) VALUES(?,?,?,?,?,0)",
+//       [name, email, phone, hashedPassword, profile_image]
+//     );
+
+//     await client.verify.v2
+//       .services(process.env.TWILIO_VERIFY_SID)
+//       .verifications.create({ to: "+91" + phone, channel: "sms" });
+
+//     res.json({
+//       success: true,
+//       message: "OTP sent to your phone",
+//       profileImage: profile_image,
+//     });
+
+//   } catch (error) {
+//     res.json({ success: false, error: error.message });
+//   }
+  
+// };
+
 exports.register = async (req, res) => {
   const { name, email, phone, password } = req.body;
-
-  const profile_image  = req.file ? req.file.filename : null;
+  const profile_image = req.file ? req.file.filename : null;
 
   if (!name || !email || !phone || !password) {
     return res.json({ success: false, message: "All fields required" });
   }
 
   try {
-    const [rows] = await db.query("SELECT * FROM users WHERE email=? OR phone = ?",  [email, phone]);
-
-    if (rows.length > 0) {
-      if (rows[0].email === email) {
-        return res.json({ success: false, message: "Email already registered" });
-      }
-      if (rows[0].phone === phone) {
-        return res.json({ success: false, message: "Phone already registered" });
-      }
-    }
-
     const hashedPassword = bcrypt.hashSync(password, 10);
 
     await db.query(
-      "INSERT INTO users(name,email,phone,password,profile_image,is_verified) VALUES(?,?,?,?,?,0)",
+      "INSERT INTO users (name, email, phone, password, profile_image, is_verified) VALUES (?, ?, ?, ?, ?, 0)",
       [name, email, phone, hashedPassword, profile_image]
     );
 
@@ -39,13 +71,30 @@ exports.register = async (req, res) => {
     res.json({
       success: true,
       message: "OTP sent to your phone",
-      profileImage: profile_image,
     });
 
   } catch (error) {
-    res.json({ success: false, error: error.message });
+
+    
+    if (error.code === "ER_DUP_ENTRY") {
+
+      if (error.message.includes("unique_email")) {
+        return res.json({
+          success: false,
+          message: "Email already registered",
+        });
+      }
+
+      if (error.message.includes("unique_phone")) {
+        return res.json({
+          success: false,
+          message: "Phone already registered",
+        });
+      }
+    }
+
+    res.json({ success: false, message: "Something went wrong" });
   }
-  
 };
 
 
