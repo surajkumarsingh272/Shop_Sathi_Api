@@ -1,5 +1,5 @@
 const db = require("../config/db");
-// const client = require("../config/twilio");
+const client = require("../config/twilio");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { SECRET_KEY } = require("../config/jwt");
