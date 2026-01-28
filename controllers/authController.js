@@ -78,14 +78,14 @@ exports.register = async (req, res) => {
     
     if (error.code === "ER_DUP_ENTRY") {
 
-      if (error.message.includes("unique_email")) {
+      if (error.message.includes("email")) {
         return res.json({
           success: false,
           message: "Email already registered",
         });
       }
 
-      if (error.message.includes("unique_phone")) {
+      if (error.message.includes("phone")) {
         return res.json({
           success: false,
           message: "Phone already registered",
